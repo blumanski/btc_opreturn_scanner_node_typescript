@@ -1,6 +1,6 @@
 /**
  * @author Oliver Blum <blumanski@protonmail.com>
- * Scan suusoin blockchain for op_returns
+ * Scan sususoin blockchain for op_returns
  * There is only one public method, call this from outside like so
  * OpScannerClient.queueScanner(chainHeight, limit, true);
  * This will run as queue and will repeat to run sections until the target height is reached. (start + limit)
