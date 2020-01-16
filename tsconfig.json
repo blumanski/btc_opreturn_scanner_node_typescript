@@ -1,0 +1,25 @@
+{
+    "compilerOptions": {
+        "target": "es5",
+        "lib": [
+            "es5",
+            "es2017",
+            "dom"
+        ],
+        "rootDir": "./src/",
+        "outDir": "./build/",
+        "module": "commonjs",
+        "declaration": true,
+        "noImplicitAny": false,
+        "removeComments": true,
+        "moduleResolution": "node",
+        "sourceMap": true,
+        "inlineSources": true
+    },
+    "include": [
+        "src/app/app.ts"
+    ],
+    "exclude": [
+        "node_modules"
+    ]
+}

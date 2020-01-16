@@ -1,0 +1,33 @@
+{
+  "name": "Susucoin Blockscanner",
+  "version": "0.0.1",
+  "description": "Scan bitcoin like blockchain for op_returns",
+  "main": "src/app/app.ts",
+  "scripts": {
+    "clean": "rimraf build",
+    "prebuild": "npm run clean",
+    "build": "tsc",
+    "prestart": "npm run build",
+    "start": "node ./build/app/app.js",
+    "predev": "npm run clean",
+    "dev": "concurrently \"npm run tsc-watch\" \"npm run nodemon\"",
+    "prenodemon": "wait-on ./build/app/app.js",
+    "nodemon": "nodemon --delay 1500ms \"./build/app/app.js\"",
+    "tsc-watch": "tsc -w",
+    "lint": "tslint -c tslint.json \"./src/**/*.ts\""
+  },
+  "author": "Oliver Blum <blumanski@protonmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "bitcoind-rpc": "^0.8.1",
+    "bitcore-lib": "^8.14.4"
+  },
+  "devDependencies": {
+    "concurrently": "^3.1.0",
+    "nodemon": "^1.11.0",
+    "rimraf": "^2.5.4",
+    "tslint": "^3.15.1",
+    "typescript": "^2.0.3",
+    "wait-on": "^1.5.3"
+  }
+}
