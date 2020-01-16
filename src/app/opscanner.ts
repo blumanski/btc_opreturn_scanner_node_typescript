@@ -34,8 +34,7 @@ export class OpScanner {
   }
 
   /**
-   * Need to use a queue, rpc through errors otherwise on limits, 40 at a time seems to work fine
-   * queue to limit calls to the rpc and avoid errors
+   * Need to use a queue, rpc threw errors on limits.
    * Error to avoid ->  Error: Bitcoin JSON-RPC: Work queue depth exceeded
    * susucoin.conf is already set a bit higher, in test it is set to 32
    * @param start 
