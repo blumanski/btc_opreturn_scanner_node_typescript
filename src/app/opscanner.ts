@@ -1,5 +1,5 @@
 /**
- * @author Oliver Blum
+ * @author Oliver Blum <blumanski@protonmail.com>
  * Scan suusoin blockchain for op_returns
  * There is only one public method, call this from outside like so
  * OpScannerClient.queueScanner(chainHeight, limit, true);
