@@ -8,7 +8,7 @@
     "prebuild": "npm run clean",
     "build": "tsc",
     "prestart": "npm run build",
-    "start": "node ./build/app/app.js",
+    "start": "node --zero-fill-buffers ./build/app/app.js",
     "predev": "npm run clean",
     "dev": "concurrently \"npm run tsc-watch\" \"npm run nodemon\"",
     "prenodemon": "wait-on ./build/app/app.js",
@@ -21,7 +21,12 @@
   "dependencies": {
     "bitcoind-rpc": "^0.8.1",
     "bitcore-lib": "^8.14.4",
-    "wait-on": "^3.3.0"
+    "gunzip-file": "^0.1.1",
+    "node-gzip": "^1.1.2",
+    "pako": "^1.0.10",
+    "punycode": "^2.1.1",
+    "wait-on": "^3.3.0",
+    "yauzl": "^2.10.0"
   },
   "devDependencies": {
     "concurrently": "^5.0.2",

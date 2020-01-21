@@ -8,9 +8,16 @@
 
 
 declare function require(name: string);
+const Buffer = require('buffer').Buffer;
 
 const bitcoreLib = require('bitcore-lib');
 const RpcClient = require('bitcoind-rpc');
+const zlib = require('zlib');
+const  yauzl = require("yauzl");
+const punycode = require('punycode');
+const {gzip, ungzip} = require('node-gzip');
+//const pako = require('pako');
+
 // model for rpc response
 import { RpcResponse } from './models/rpcresponse.model';
 
@@ -18,15 +25,17 @@ export class OpScanner {
 
   private config = {
     protocol: 'http',
-    user: '*****',
-    pass: '********',
+    user: 'XXXX',
+    pass: 'XXXXXX',
     host: '127.0.0.1',
     port: '8332',
   };
 
+  private limit: number = 3;
+
   private rpc: any;
   private startHeight: number = 390076;
-  private defaultLimit: number = 50;
+  private defaultLimit: number = 2;
   private CurrentTargetHeight: number = 0;
 
   constructor() {
@@ -55,8 +64,8 @@ export class OpScanner {
     if(setMax === true) {
       this.CurrentTargetHeight = (start + limit);
     } else {
-      if(this.CurrentTargetHeight < (start + 40)) {
-        console.log('Completed');
+      if(this.CurrentTargetHeight < (start + this.limit)) {
+        //console.log('Completed');
         return 'Complete';
       }
     }
@@ -66,13 +75,9 @@ export class OpScanner {
         
         await this.delay(300)
           .then(any => {
-            this.scanForMessages(start, 40)
+            this.scanForMessages(start, this.limit)
               .then(any => {
-                this.queueScanner((start + 40), 40);
-
-                // console.log('start -> ', start)
-                // console.log('end -> ', (start +40))
-                // console.log('TARGET -> ', this.CurrentTargetHeight)
+                this.queueScanner((start + this.limit), this.limit);
               })
           })
 
@@ -89,23 +94,8 @@ export class OpScanner {
    * @param limit number -> optional -> limit, as of "scan next 500"
    */
   private scanForMessages(start: number, limit: number) {
-    return new Promise((resolve, reject) => {
-      // get blockcount
-    let a = this.getblockcount();
-    // get blockhash for blockchain start height
-    let b = a.then((height: number) => {
-      return this.getblockhash(start);
-    });
-    // get block
-    let c = b.then((hash: string) => {
-      return this.getblock(hash);
-    })
 
-    // Chain the promises
-    return Promise.all([a, b, c])
-      .then((vars: Array<any>) => {
-        // test if all needed array keys exist
-        if (vars[0] && vars[1] && vars[2]) {
+    return new Promise((resolve, reject) => {
           // declare array that will hold all op_returns
           let opReturns = [];
           // start looping through blocks 
@@ -122,42 +112,67 @@ export class OpScanner {
               .then((subs: Array<any>) => {
                 // test if array keys exist
                 if (subs[0] && subs[1]) {
+
+                  // console.log('blockhash -> ', subs[0]);
+                  // console.log('block -> ', subs[1]);
+                  // console.log("\n-----------End first step ----------------\n")
+                  
                   // test is array keys exist and not empty
                   if (subs[1]['tx'] && subs[1]['tx'].length > 0) {
                     // foreach through the the array
                     subs[1]['tx'].forEach((value: object, index: number) => {
+
+                      // console.log('tx '+index+' -> ', value);
+                      // console.log("\n...............End second step ................\n")
+
                       // get raw transaction
                       this.getrawtransaction(value)
                         .then((result: RpcResponse) => {
-                          
+
+                          // console.log('version -> ', result['version'])
+                          // console.log('Raw Transaction -> ', result);
+                          // console.log("\n...............End third step ................\n")
+
                           if(result['vout'] && result['vout'].length > 0) {
                             // @todo
                             // needs testing, see if this is always key "vout" or other may other keys too
                             // loop through vout array
+                            let concatOpReturns: Array<any> = new Array();
+                            let texid:any;
+
                             result['vout'].forEach((vout: object | null) => {
-                              // look for scriptPubKey
-                              if (vout && vout['scriptPubKey']) {
-                                if (vout['scriptPubKey']['asm'] && vout['scriptPubKey']['asm'].substr(0, 9) == 'OP_RETURN') {
-                                  // test log
-                                  console.log(vout['scriptPubKey']['asm']);
-                                  console.log(vout['scriptPubKey']['asm'].substr(10, vout['scriptPubKey']['asm'].length));
+
+                              if(vout.hasOwnProperty('value') && vout['value'] == 0) {
+                               //console.log(vout)
+
+                                // look for scriptPubKey
+                                if (vout.hasOwnProperty('scriptPubKey')) {
+                                  if (vout['scriptPubKey']['asm'] && vout['scriptPubKey']['asm'].substr(0, 9) == 'OP_RETURN') {
+
+                                    console.log('tx '+index+' -> ', value);
+                                    console.log(vout['scriptPubKey']['asm'] && vout['scriptPubKey']['asm'])
+                                    console.log('dehexed -> ', this.hex2a(vout['scriptPubKey']['asm'].substr(10, vout['scriptPubKey']['asm'].length)))
+
+                                    // attempt to create buffer for gunzip
+                                    let buff = Buffer.from(vout['scriptPubKey']['asm'].substr(10, vout['scriptPubKey']['asm'].length), 'hex');
+                                    // add to array
+                                    concatOpReturns.push(buff);
 
 
-                                  // decompress OP_RETURN and decode it
-
-
-                                  // end decoding it
-
-                                  // next step below
-
-                                  // push the de compressed and decoded string to the opReturn array
-                                  //opReturns.push();
-
-
-                                } // end test for OP_RETURN
-                              } // end look for scriptPubKey
-
+                                  } // end test for OP_RETURN
+                                } // end look for scriptPubKey
+                                }
                             }); // end foreach
+                            
+                            console.log('concat -> ', concatOpReturns)
+
+                            let buffer: any;
+                            if(concatOpReturns.length > 0) {
+                              // concat buffer
+                              buffer = Buffer.concat(concatOpReturns);
+                              // gunzip buffer
+                              this.decodeOpReturn(buffer);
+                            }
 
                             resolve(true);
 
@@ -178,17 +193,44 @@ export class OpScanner {
               })
 
           } // end loop 1
-        } // end test array
-      })
-      .catch(error => {
-        console.log(error)
-      })
+
     })
     .catch(error => {
       console.log(error);
     }); // end promise
   }
 
+  private decodeOpReturn(buffer: any) {
+
+    zlib.gunzip(buffer, (err, dezipped) => {
+      console.log(err)
+      if(!err && dezipped) {
+        console.log(dezipped.toString('utf8'));
+      }
+      
+    });
+
+    //  const zipFile = yauzl.fromBuffer(buffer, { lazyEntries: true }, (err, zipfile) => {
+    //   console.log(err)
+    //   console.log(zipFile)
+    //  });
+     
+   // console.log("\n buffer concate -> ", buffer)
+    // zlib.gunzip(buffer, (err, dezipped) => {
+    //   console.log('error -> ', err)
+    //   //console.log(dezipped);
+    // });
+
+  }
+
+
+  private hex2a(hexx: any) {
+    let hex = hexx.toString();
+    let str = '';
+    for (let i = 0; (i < hex.length && hex.substr(i, 2) !== '00'); i += 2)
+        str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
+    return str;
+  }
 
   // ------------------------------- Promises Wrapper to avoid pyramid of doom -------------------------------
   
