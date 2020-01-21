@@ -31,8 +31,6 @@ export class OpScanner {
     port: '8332',
   };
 
-  private limit: number = 3;
-
   private rpc: any;
   private startHeight: number = 390076;
   private defaultLimit: number = 2;
@@ -64,7 +62,7 @@ export class OpScanner {
     if(setMax === true) {
       this.CurrentTargetHeight = (start + limit);
     } else {
-      if(this.CurrentTargetHeight < (start + this.limit)) {
+      if(this.CurrentTargetHeight < (start + limit)) {
         //console.log('Completed');
         return 'Complete';
       }
@@ -75,9 +73,9 @@ export class OpScanner {
         
         await this.delay(300)
           .then(any => {
-            this.scanForMessages(start, this.limit)
+            this.scanForMessages(start, limit)
               .then(any => {
-                this.queueScanner((start + this.limit), this.limit);
+                this.queueScanner((start + limit), limit);
               })
           })
 
