@@ -117,7 +117,7 @@ export class OpScanner {
                   // console.log('block -> ', subs[1]);
                   // console.log("\n-----------End first step ----------------\n")
                   
-                  // test is array keys exist and not empty
+                  // test if array keys exist and not empty
                   if (subs[1]['tx'] && subs[1]['tx'].length > 0) {
                     // foreach through the the array
                     subs[1]['tx'].forEach((value: object, index: number) => {
@@ -150,7 +150,7 @@ export class OpScanner {
                                   if (vout['scriptPubKey']['asm'] && vout['scriptPubKey']['asm'].substr(0, 9) == 'OP_RETURN') {
 
                                     console.log('tx '+index+' -> ', value);
-                                    console.log(vout['scriptPubKey']['asm'] && vout['scriptPubKey']['asm'])
+                                    console.log(vout['scriptPubKey']['asm'])
                                     console.log('dehexed -> ', this.hex2a(vout['scriptPubKey']['asm'].substr(10, vout['scriptPubKey']['asm'].length)))
 
                                     // attempt to create buffer for gunzip
